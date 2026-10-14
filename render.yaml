@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: routine-builder-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/routine/health
+    envVars:
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # e.g. https://your-app.netlify.app,http://localhost:5173
+      - key: SPRING_DATASOURCE_URL
+        sync: false # Supabase JDBC URL (see README)
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false # optional, enables real AI skin analysis
