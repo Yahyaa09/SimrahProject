@@ -4,6 +4,7 @@ import com.project.RoutineBuilder.dto.ClashResponse;
 import com.project.RoutineBuilder.entity.ClashRule;
 import com.project.RoutineBuilder.entity.Product;
 import com.project.RoutineBuilder.repository.ClashRuleRepository;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -22,22 +23,33 @@ public class MatchClashService {
             return new ClashResponse(true, "No products selected.");
         }
 
+        List<ClashRule> clashes = findClashes(selectedProducts);
+        if (!clashes.isEmpty()) {
+            return new ClashResponse(false, clashes.get(0).getAlertMessage());
+        }
+        return new ClashResponse(true, "Routine is safe.");
+    }
+
+    public List<ClashRule> findClashes(List<Product> products) {
         Set<String> ingredients = new HashSet<>();
-        for (Product product : selectedProducts) {
+        for (Product product : products) {
             if (product != null && product.getActiveIngredient() != null) {
                 ingredients.add(normalize(product.getActiveIngredient()));
             }
         }
 
+        List<ClashRule> clashes = new ArrayList<>();
         for (ClashRule rule : clashRuleRepository.findAll()) {
-            String ingredientOne = normalize(rule.getIngredientOne());
-            String ingredientTwo = normalize(rule.getIngredientTwo());
-            if (ingredients.contains(ingredientOne) && ingredients.contains(ingredientTwo)) {
-                return new ClashResponse(false, rule.getAlertMessage());
+            if (ingredients.contains(normalize(rule.getIngredientOne()))
+                    && ingredients.contains(normalize(rule.getIngredientTwo()))) {
+                clashes.add(rule);
             }
         }
+        return clashes;
+    }
 
-        return new ClashResponse(true, "Routine is safe.");
+    public boolean hasIngredient(Product product, String ingredient) {
+        return product != null && normalize(product.getActiveIngredient()).equals(normalize(ingredient));
     }
 
     private String normalize(String value) {

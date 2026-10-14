@@ -163,6 +163,35 @@ select {
   line-height: 1;
 }
 
+.safety-banner.adjusted {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #fef9c3;
+  color: #854d0e;
+  border: 2px solid #facc15;
+}
+
+.safety-banner.adjusted .clash-title {
+  color: #a16207;
+}
+
+.safety-banner.adjusted ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-weight: 600;
+}
+
+.routine-section {
+  display: grid;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
 @keyframes clash-pop {
   0% {
     opacity: 0;

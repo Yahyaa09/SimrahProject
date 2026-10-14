@@ -19,6 +19,40 @@ async function readError(response) {
   return `Request failed with status ${response.status}`;
 }
 
+function RoutineSteps({ products }) {
+  return (
+    <>
+      <ol className="step-flow" aria-label="Routine order">
+        {products.map((product, index) => (
+          <li key={product.id ?? `${product.name}-${index}`}>
+            <span className="step-badge">
+              Step {index + 1}: {product.category}
+            </span>
+            {index < products.length - 1 && <span className="step-arrow">→</span>}
+          </li>
+        ))}
+      </ol>
+
+      <div className="routine-list">
+        {products.map((product, index) => (
+          <div className="routine-item" key={product.id ?? `${product.name}-${index}`}>
+            <span className="step-pill">Step {index + 1}</span>
+            <div>
+              <h3>{product.name}</h3>
+              <p>
+                {product.category}
+                {product.activeIngredient && (
+                  <span className="ingredient-tag">{product.activeIngredient}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function App() {
   const [mode, setMode] = useState('choose');
   const [form, setForm] = useState(initialForm);
@@ -33,6 +67,16 @@ function App() {
   const isSafe = result?.safetyCheck?.isSafe ?? result?.safetyCheck?.safe ?? false;
   const safetyMessage = result?.safetyCheck?.message ?? '';
   const routine = result?.orderedRoutine ?? [];
+  const amRoutine = result?.amRoutine ?? routine;
+  const pmRoutine = result?.pmRoutine ?? [];
+  const adjustments = result?.adjustments ?? [];
+  const sections =
+    pmRoutine.length > 0
+      ? [
+          { title: '☀️ Morning (AM)', products: amRoutine },
+          { title: '🌙 Evening (PM)', products: pmRoutine },
+        ]
+      : [{ title: '', products: amRoutine }];
 
   useEffect(() => {
     if (!imageFile) {
@@ -242,9 +286,7 @@ function App() {
               </div>
             )}
 
-            {isSafe ? (
-              <div className="safety-banner safe">✅ {safetyMessage}</div>
-            ) : (
+            {!isSafe ? (
               <div className="safety-banner unsafe" role="alert">
                 <span className="clash-icon">⚠️</span>
                 <div>
@@ -252,6 +294,20 @@ function App() {
                   <p>{safetyMessage}</p>
                 </div>
               </div>
+            ) : adjustments.length > 0 ? (
+              <div className="safety-banner adjusted" role="status">
+                <span className="clash-icon">🔄</span>
+                <div>
+                  <strong className="clash-title">Routine adjusted for safety</strong>
+                  <ul>
+                    {adjustments.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <div className="safety-banner safe">✅ {safetyMessage}</div>
             )}
 
             <div className="results-header">
@@ -261,35 +317,12 @@ function App() {
             {routine.length === 0 ? (
               <p className="empty-state">No products found for this concern yet.</p>
             ) : (
-              <>
-                <ol className="step-flow" aria-label="Routine order">
-                  {routine.map((product, index) => (
-                    <li key={product.id ?? `${product.name}-${index}`}>
-                      <span className="step-badge">
-                        Step {index + 1}: {product.category}
-                      </span>
-                      {index < routine.length - 1 && <span className="step-arrow">→</span>}
-                    </li>
-                  ))}
-                </ol>
-
-                <div className="routine-list">
-                  {routine.map((product, index) => (
-                    <div className="routine-item" key={product.id ?? `${product.name}-${index}`}>
-                      <span className="step-pill">Step {index + 1}</span>
-                      <div>
-                        <h3>{product.name}</h3>
-                        <p>
-                          {product.category}
-                          {product.activeIngredient && (
-                            <span className="ingredient-tag">{product.activeIngredient}</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
+              sections.map((section) => (
+                <section className="routine-section" key={section.title}>
+                  {section.title && <h3 className="section-title">{section.title}</h3>}
+                  <RoutineSteps products={section.products} />
+                </section>
+              ))
             )}
 
             <button className="primary-button" type="button" onClick={reset}>

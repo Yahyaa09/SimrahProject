@@ -1,5 +1,9 @@
 package com.project.RoutineBuilder;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,14 +32,30 @@ class RoutineControllerTests {
     private MockMvc mockMvc;
 
     @Test
-    void bodyAcneRoutineIsOrderedAndFlagsClash() throws Exception {
+    void bodyAcneClashIsResolvedBySplittingAmAndPm() throws Exception {
         mockMvc.perform(post("/api/v1/routine/build")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"primaryConcern\":\"Body Acne\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderedRoutine[0].category").value("Cleanser"))
                 .andExpect(jsonPath("$.orderedRoutine[3].category").value("Moisturizer"))
-                .andExpect(jsonPath("$.safetyCheck.isSafe").value(false));
+                .andExpect(jsonPath("$.amRoutine[*].activeIngredient", hasItem("Salicylic Acid")))
+                .andExpect(jsonPath("$.amRoutine[*].activeIngredient", not(hasItem("Physical Scrub"))))
+                .andExpect(jsonPath("$.pmRoutine[*].activeIngredient", hasItem("Physical Scrub")))
+                .andExpect(jsonPath("$.pmRoutine[*].activeIngredient", not(hasItem("Salicylic Acid"))))
+                .andExpect(jsonPath("$.adjustments", hasSize(1)))
+                .andExpect(jsonPath("$.safetyCheck.isSafe").value(true));
+    }
+
+    @Test
+    void strawberrySkinMovesRetinolToPm() throws Exception {
+        mockMvc.perform(post("/api/v1/routine/build")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"primaryConcern\":\"Strawberry Skin\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pmRoutine[*].activeIngredient", hasItem("Retinol")))
+                .andExpect(jsonPath("$.amRoutine[*].activeIngredient", not(hasItem("Retinol"))))
+                .andExpect(jsonPath("$.safetyCheck.isSafe").value(true));
     }
 
     @Test
@@ -44,7 +64,9 @@ class RoutineControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"primaryConcern\":\"Hyperpigmentation\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.safetyCheck.isSafe").value(true));
+                .andExpect(jsonPath("$.safetyCheck.isSafe").value(true))
+                .andExpect(jsonPath("$.pmRoutine", hasSize(0)))
+                .andExpect(jsonPath("$.adjustments", hasSize(0)));
     }
 
     @Test
@@ -55,7 +77,7 @@ class RoutineControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.detectedConcern").value("Body Acne"))
                 .andExpect(jsonPath("$.source").value("heuristic"))
-                .andExpect(jsonPath("$.routine.safetyCheck.isSafe").value(false));
+                .andExpect(jsonPath("$.routine.pmRoutine", hasSize(3)));
     }
 
     @Test
