@@ -29,4 +29,5 @@ public class ClashRule {
 
     @Column(nullable = false)
     private String alertMessage;
+    
 }
