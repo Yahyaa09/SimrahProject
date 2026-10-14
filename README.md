@@ -48,7 +48,7 @@ the same category, or removed if none exists (see `allergyAdjustments` in the re
 2. Set env vars. For Supabase use the **Session pooler** connection (IPv4), e.g.
    `SPRING_DATASOURCE_URL=jdbc:postgresql://aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require`,
    `SPRING_DATASOURCE_USERNAME=postgres.<project-ref>`.
-3. Set `CORS_ALLOWED_ORIGINS=https://<your-site>.netlify.app`.
+3. Set `CORS_ALLOWED_ORIGINS=
 
 **Frontend – Netlify**
 1. Import the GitHub repo (settings come from `netlify.toml`).
