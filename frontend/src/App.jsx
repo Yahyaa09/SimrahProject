@@ -24,7 +24,6 @@ async function readError(response) {
     const body = await response.json();
     if (body?.error) return body.error;
   } catch {
-    // ignore non-JSON error bodies
   }
   return `Request failed with status ${response.status}`;
 }
