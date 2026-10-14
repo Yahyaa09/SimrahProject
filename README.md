@@ -52,6 +52,6 @@ the same category, or removed if none exists (see `allergyAdjustments` in the re
 
 **Frontend – Netlify**
 1. Import the GitHub repo (settings come from `netlify.toml`).
-2. Add env var `VITE_API_BASE_URL=https://<your-api>.onrender.com`, then deploy.
+2. Add env var `VITE_API_BASE_URL=https://<your-api>.onrender.com`, then deploy .
 
 For a local live demo, leave `VITE_API_BASE_URL` unset and it defaults to `http://localhost:8080`.
