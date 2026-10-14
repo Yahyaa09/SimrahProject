@@ -23,15 +23,51 @@ public class RoutineBuilderService {
 
     private final ProductRepository productRepository;
     private final MatchClashService matchClashService;
+    private final AllergyService allergyService;
 
     public RoutineResponse buildRoutine(String primaryConcern) {
-        List<Product> products = new ArrayList<>(productRepository.findByTargetConcern(primaryConcern));
+        return buildRoutine(primaryConcern, null);
+    }
+
+    public RoutineResponse buildRoutine(String primaryConcern, String allergies) {
+        List<Product> candidates = productRepository.findByTargetConcern(primaryConcern);
+        List<Product> alternatives = candidates.stream().filter(this::isAlternative).toList();
+        List<Product> primary = new ArrayList<>(candidates.stream().filter(p -> !isAlternative(p)).toList());
+        primary.sort(BY_VISCOSITY);
+
+        List<AllergyService.AllergyRule> rules = allergyService.parse(allergies);
+        List<String> allergyAdjustments = new ArrayList<>();
+        List<Product> products = new ArrayList<>();
+        for (Product product : primary) {
+            Optional<AllergyService.AllergyHit> hit = allergyService.findHit(product, rules);
+            if (hit.isEmpty()) {
+                products.add(product);
+                continue;
+            }
+            Optional<Product> substitute = alternatives.stream()
+                    .filter(alt -> sameCategory(alt, product))
+                    .filter(alt -> !products.contains(alt))
+                    .filter(alt -> allergyService.findHit(alt, rules).isEmpty())
+                    .findFirst();
+            if (substitute.isPresent()) {
+                products.add(substitute.get());
+                allergyAdjustments.add("Swapped \"" + product.getName() + "\" for \"" + substitute.get().getName()
+                        + "\" because it contains " + hit.get().describe() + ".");
+            } else {
+                allergyAdjustments.add("Removed \"" + product.getName() + "\" because it contains "
+                        + hit.get().describe() + " and no allergy-safe alternative is available.");
+            }
+        }
         products.sort(BY_VISCOSITY);
 
+        return resolveClashes(products, allergyAdjustments);
+    }
+
+    private RoutineResponse resolveClashes(List<Product> products, List<String> allergyAdjustments) {
         List<ClashRule> clashes = matchClashService.findClashes(products);
         if (clashes.isEmpty()) {
             return new RoutineResponse(products, products, List.of(),
-                    matchClashService.validateRoutine(products), List.of());
+                    matchClashService.validateRoutine(products), List.of(), allergyAdjustments);
         }
 
         // Resolve each clash by moving one product of the pair to the evening routine.
@@ -74,7 +110,7 @@ public class RoutineBuilderService {
             safetyCheck = new ClashResponse(true, "Routine adjusted: clashing products were split into AM and PM.");
         }
 
-        return new RoutineResponse(products, am, pm, safetyCheck, adjustments);
+        return new RoutineResponse(products, am, pm, safetyCheck, adjustments, allergyAdjustments);
     }
 
     private Optional<Product> find(List<Product> products, String ingredient) {
@@ -90,6 +126,14 @@ public class RoutineBuilderService {
             return one;
         }
         return two;
+    }
+
+    private boolean isAlternative(Product product) {
+        return Boolean.TRUE.equals(product.getAlternative());
+    }
+
+    private boolean sameCategory(Product a, Product b) {
+        return a.getCategory() != null && a.getCategory().equalsIgnoreCase(b.getCategory());
     }
 
     private boolean isAmOnly(Product product) {

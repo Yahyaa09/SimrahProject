@@ -20,4 +20,6 @@ public class RoutineResponse {
     private ClashResponse safetyCheck;
     /** Explanations of clashes the builder resolved by splitting products into AM / PM. */
     private List<String> adjustments;
+    /** Products swapped or removed because they contain one of the user's allergens. */
+    private List<String> allergyAdjustments;
 }

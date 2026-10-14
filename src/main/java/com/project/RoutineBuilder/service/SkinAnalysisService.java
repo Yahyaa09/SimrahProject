@@ -65,7 +65,7 @@ public class SkinAnalysisService {
         this.restClient = RestClient.builder().requestFactory(factory).build();
     }
 
-    public SkinAnalysisResponse analyze(MultipartFile file) throws IOException {
+    public SkinAnalysisResponse analyze(MultipartFile file, String allergies) throws IOException {
         byte[] bytes = file.getBytes();
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
         if (image == null) {
@@ -88,7 +88,7 @@ public class SkinAnalysisService {
                 detection.concern(),
                 detection.confidence(),
                 detection.source(),
-                routineBuilderService.buildRoutine(detection.concern()));
+                routineBuilderService.buildRoutine(detection.concern(), allergies));
     }
 
     private Detection classifyWithHuggingFace(byte[] bytes) {

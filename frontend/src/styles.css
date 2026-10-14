@@ -192,6 +192,87 @@ select {
   font-size: 18px;
 }
 
+.safety-banner.allergy {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #e0f2fe;
+  color: #075985;
+  border: 2px solid #38bdf8;
+}
+
+.safety-banner.allergy .clash-title {
+  color: #0369a1;
+}
+
+.safety-banner.allergy ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-weight: 600;
+}
+
+.allergy-picker {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.allergy-picker legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.allergy-picker .hint {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.allergy-picker input {
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: white;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: #a5b4fc;
+}
+
+.chip.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+}
+
+.ingredients {
+  margin-top: 4px !important;
+  font-size: 13px;
+  color: #64748b;
+}
+
 @keyframes clash-pop {
   0% {
     opacity: 0;

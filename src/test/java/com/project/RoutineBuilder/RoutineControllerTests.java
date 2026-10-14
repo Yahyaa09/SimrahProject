@@ -1,9 +1,11 @@
 package com.project.RoutineBuilder;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -67,6 +69,58 @@ class RoutineControllerTests {
                 .andExpect(jsonPath("$.safetyCheck.isSafe").value(true))
                 .andExpect(jsonPath("$.pmRoutine", hasSize(0)))
                 .andExpect(jsonPath("$.adjustments", hasSize(0)));
+    }
+
+    @Test
+    void allergensEndpointListsCommonAllergens() throws Exception {
+        mockMvc.perform(get("/api/v1/routine/allergens"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].key", hasItem("TREE_NUTS")))
+                .andExpect(jsonPath("$[*].label", hasItem("Fragrance / Parfum")));
+    }
+
+    @Test
+    void nutAllergySwapsWalnutScrubForSafeAlternative() throws Exception {
+        mockMvc.perform(post("/api/v1/routine/build")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"primaryConcern\":\"Body Acne\",\"allergies\":\"TREE_NUTS\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderedRoutine[*].name", not(hasItem("Walnut Shell Body Scrub"))))
+                .andExpect(jsonPath("$.orderedRoutine[*].name", hasItem("Jojoba Bead Body Polish")))
+                .andExpect(jsonPath("$.allergyAdjustments", hasSize(1)))
+                .andExpect(jsonPath("$.allergyAdjustments[0]", containsString("walnut (Tree Nuts)")));
+    }
+
+    @Test
+    void aspirinAliasSwapsSalicylicCleanserAndRemovesClash() throws Exception {
+        mockMvc.perform(post("/api/v1/routine/build")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"primaryConcern\":\"Body Acne\",\"allergies\":\"aspirin\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderedRoutine[0].name").value("Benzoyl Peroxide 5% Body Wash"))
+                .andExpect(jsonPath("$.pmRoutine", hasSize(0)))
+                .andExpect(jsonPath("$.adjustments", hasSize(0)))
+                .andExpect(jsonPath("$.safetyCheck.isSafe").value(true));
+    }
+
+    @Test
+    void freeTextAllergyRemovesProductWithoutAlternative() throws Exception {
+        mockMvc.perform(post("/api/v1/routine/build")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"primaryConcern\":\"Body Acne\",\"allergies\":\"Niacinamide\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderedRoutine[*].name", not(hasItem("Niacinamide 10% Serum"))))
+                .andExpect(jsonPath("$.allergyAdjustments[0]", containsString("Removed")));
+    }
+
+    @Test
+    void analyzeSkinAppliesAllergies() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("image", "red.png", "image/png", png(new Color(220, 60, 60), null));
+
+        mockMvc.perform(multipart("/api/v1/routine/analyze-skin").file(file).param("allergies", "FRAGRANCE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.routine.orderedRoutine[*].ingredients", not(hasItem(containsString("Fragrance")))))
+                .andExpect(jsonPath("$.routine.allergyAdjustments", hasSize(2)));
     }
 
     @Test

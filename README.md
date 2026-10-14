@@ -19,9 +19,14 @@ Demo cases: **Body Acne** (Salicylic Acid + Physical Scrub clash), **Strawberry 
 
 | Method | Path | Body |
 | --- | --- | --- |
-| POST | `/api/v1/routine/build` | `{"primaryConcern": "Body Acne"}` |
-| POST | `/api/v1/routine/analyze-skin` | multipart form, field `image` (JPG/PNG) |
+| POST | `/api/v1/routine/build` | `{"primaryConcern": "Body Acne", "allergies": "TREE_NUTS, niacinamide"}` |
+| POST | `/api/v1/routine/analyze-skin` | multipart form: `image` (JPG/PNG), optional `allergies` |
+| GET | `/api/v1/routine/allergens` | – (list of common allergens) |
 | GET | `/api/v1/routine/health` | – |
+
+`allergies` is a comma-separated list of allergen keys, common names (e.g. `nuts`, `aspirin`, `sls`)
+or any ingredient name. Products containing them are swapped for an allergy-safe alternative of
+the same category, or removed if none exists (see `allergyAdjustments` in the response).
 
 `analyze-skin` uses Hugging Face zero-shot image classification (CLIP) when
 `HUGGINGFACE_API_TOKEN` is set, otherwise (or on failure) a built-in colour heuristic.

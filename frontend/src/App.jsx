@@ -6,8 +6,12 @@ const ROUTINE_API = `${API_BASE_URL}/api/v1/routine`;
 const initialForm = {
   primaryConcern: 'Body Acne',
   severity: 'Mild',
-  allergies: '',
+  allergens: [],
+  otherAllergies: '',
 };
+
+const toAllergyString = ({ allergens, otherAllergies }) =>
+  [...allergens, otherAllergies].map((value) => value.trim()).filter(Boolean).join(', ');
 
 async function readError(response) {
   try {
@@ -17,6 +21,43 @@ async function readError(response) {
     // ignore non-JSON error bodies
   }
   return `Request failed with status ${response.status}`;
+}
+
+function AllergyPicker({ options, selected, other, onToggle, onOtherChange }) {
+  return (
+    <fieldset className="allergy-picker">
+      <legend>Allergies &amp; sensitivities</legend>
+      <p className="hint">Tap any that apply. We'll swap out products that contain them.</p>
+      {options.length > 0 ? (
+        <div className="chip-grid">
+          {options.map((option) => {
+            const active = selected.includes(option.key);
+            return (
+              <button
+                type="button"
+                key={option.key}
+                className={`chip ${active ? 'active' : ''}`}
+                aria-pressed={active}
+                title={option.description}
+                onClick={() => onToggle(option.key)}
+              >
+                {active ? '✓ ' : ''}
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="hint">Common allergens couldn't be loaded. You can still type them below.</p>
+      )}
+      <input
+        type="text"
+        value={other}
+        onChange={(event) => onOtherChange(event.target.value)}
+        placeholder="Other ingredients, comma-separated (e.g. niacinamide, coconut)"
+      />
+    </fieldset>
+  );
 }
 
 function RoutineSteps({ products }) {
@@ -45,6 +86,7 @@ function RoutineSteps({ products }) {
                   <span className="ingredient-tag">{product.activeIngredient}</span>
                 )}
               </p>
+              {product.ingredients && <p className="ingredients">Ingredients: {product.ingredients}</p>}
             </div>
           </div>
         ))}
@@ -62,6 +104,7 @@ function App() {
   const [analysis, setAnalysis] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [allergenOptions, setAllergenOptions] = useState([]);
 
   const isResultsVisible = Boolean(result);
   const isSafe = result?.safetyCheck?.isSafe ?? result?.safetyCheck?.safe ?? false;
@@ -70,6 +113,7 @@ function App() {
   const amRoutine = result?.amRoutine ?? routine;
   const pmRoutine = result?.pmRoutine ?? [];
   const adjustments = result?.adjustments ?? [];
+  const allergyAdjustments = result?.allergyAdjustments ?? [];
   const sections =
     pmRoutine.length > 0
       ? [
@@ -77,6 +121,13 @@ function App() {
           { title: '🌙 Evening (PM)', products: pmRoutine },
         ]
       : [{ title: '', products: amRoutine }];
+
+  useEffect(() => {
+    fetch(`${ROUTINE_API}/allergens`)
+      .then((response) => (response.ok ? response.json() : []))
+      .then(setAllergenOptions)
+      .catch(() => setAllergenOptions([]));
+  }, []);
 
   useEffect(() => {
     if (!imageFile) {
@@ -93,6 +144,25 @@ function App() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const toggleAllergen = (key) => {
+    setForm((current) => ({
+      ...current,
+      allergens: current.allergens.includes(key)
+        ? current.allergens.filter((value) => value !== key)
+        : [...current.allergens, key],
+    }));
+  };
+
+  const allergyPicker = (
+    <AllergyPicker
+      options={allergenOptions}
+      selected={form.allergens}
+      other={form.otherAllergies}
+      onToggle={toggleAllergen}
+      onOtherChange={(value) => setForm((current) => ({ ...current, otherAllergies: value }))}
+    />
+  );
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -102,7 +172,11 @@ function App() {
       const response = await fetch(`${ROUTINE_API}/build`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          primaryConcern: form.primaryConcern,
+          severity: form.severity,
+          allergies: toAllergyString(form),
+        }),
       });
 
       if (!response.ok) {
@@ -131,6 +205,7 @@ function App() {
     try {
       const body = new FormData();
       body.append('image', imageFile);
+      body.append('allergies', toAllergyString(form));
 
       const response = await fetch(`${ROUTINE_API}/analyze-skin`, { method: 'POST', body });
       if (!response.ok) {
@@ -215,6 +290,7 @@ function App() {
             </label>
 
             {imageFile && <p className="file-name">{imageFile.name}</p>}
+            {allergyPicker}
             {error && <div className="error-banner">{error}</div>}
 
             <div className="button-row">
@@ -248,16 +324,7 @@ function App() {
               </select>
             </label>
 
-            <label>
-              Allergies
-              <input
-                name="allergies"
-                type="text"
-                value={form.allergies}
-                onChange={handleChange}
-                placeholder="List any ingredients or sensitivities"
-              />
-            </label>
+            {allergyPicker}
 
             {error && <div className="error-banner">{error}</div>}
 
@@ -283,6 +350,20 @@ function App() {
                   {Math.round(analysis.confidence * 100)}% confidence ·{' '}
                   {analysis.source === 'huggingface' ? 'AI model' : 'Demo scanner'}
                 </span>
+              </div>
+            )}
+
+            {allergyAdjustments.length > 0 && (
+              <div className="safety-banner allergy" role="status">
+                <span className="clash-icon">🛡️</span>
+                <div>
+                  <strong className="clash-title">Allergy-safe swaps</strong>
+                  <ul>
+                    {allergyAdjustments.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
 
