@@ -72,6 +72,23 @@ class RoutineControllerTests {
     }
 
     @Test
+    void detailedQuizProducesAPersonalizedSensitiveSkinRoutine() throws Exception {
+        mockMvc.perform(post("/api/v1/routine/build")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"primaryConcern":"Hyperpigmentation","severity":"Moderate","skinType":"Sensitive",
+                                "sensitivityLevel":"High","mainGoal":"Fade dark spots","routineTime":"Both AM + PM",
+                                "climate":"Dry","budget":"Premium","allergies":""}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileSummary", containsString("Hyperpigmentation")))
+                .andExpect(jsonPath("$.profileSummary", containsString("Sensitive skin")))
+                .andExpect(jsonPath("$.orderedRoutine[*].name", hasItem("Micellar Cleansing Water")))
+                .andExpect(jsonPath("$.personalizationNotes[0]", containsString("Skin type: Sensitive")))
+                .andExpect(jsonPath("$.personalizationNotes", hasSize(9)));
+    }
+
+    @Test
     void allergensEndpointListsCommonAllergens() throws Exception {
         mockMvc.perform(get("/api/v1/routine/allergens"))
                 .andExpect(status().isOk())

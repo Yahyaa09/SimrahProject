@@ -6,6 +6,12 @@ const ROUTINE_API = `${API_BASE_URL}/api/v1/routine`;
 const initialForm = {
   primaryConcern: 'Body Acne',
   severity: 'Mild',
+  skinType: 'Combination',
+  sensitivityLevel: 'Moderate',
+  mainGoal: 'Keep skin calm',
+  routineTime: 'Both AM + PM',
+  climate: 'Humid',
+  budget: 'Mid-range',
   allergens: [],
   otherAllergies: '',
 };
@@ -57,6 +63,19 @@ function AllergyPicker({ options, selected, other, onToggle, onOtherChange }) {
         placeholder="Other ingredients, comma-separated (e.g. niacinamide, coconut)"
       />
     </fieldset>
+  );
+}
+
+function SelectField({ label, name, value, onChange, options }) {
+  return (
+    <label>
+      {label}
+      <select name={name} value={value} onChange={onChange}>
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -114,6 +133,8 @@ function App() {
   const pmRoutine = result?.pmRoutine ?? [];
   const adjustments = result?.adjustments ?? [];
   const allergyAdjustments = result?.allergyAdjustments ?? [];
+  const profileSummary = result?.profileSummary ?? '';
+  const personalizationNotes = result?.personalizationNotes ?? [];
   const sections =
     pmRoutine.length > 0
       ? [
@@ -163,6 +184,53 @@ function App() {
     />
   );
 
+  const profileFields = (
+    <div className="quiz-grid">
+      <SelectField
+        label="Skin type"
+        name="skinType"
+        value={form.skinType}
+        onChange={handleChange}
+        options={['Oily', 'Combination', 'Dry', 'Sensitive', 'Normal']}
+      />
+      <SelectField
+        label="Sensitivity"
+        name="sensitivityLevel"
+        value={form.sensitivityLevel}
+        onChange={handleChange}
+        options={['Low', 'Moderate', 'High']}
+      />
+      <SelectField
+        label="Main goal"
+        name="mainGoal"
+        value={form.mainGoal}
+        onChange={handleChange}
+        options={['Keep skin calm', 'Fade dark spots', 'Control acne', 'Smooth texture', 'Strengthen barrier']}
+      />
+      <SelectField
+        label="Routine length"
+        name="routineTime"
+        value={form.routineTime}
+        onChange={handleChange}
+        options={['Short 3-step', 'Balanced 4-step', 'Detailed AM + PM', 'Both AM + PM']}
+      />
+      <SelectField
+        label="Climate"
+        name="climate"
+        value={form.climate}
+        onChange={handleChange}
+        options={['Dry', 'Humid', 'Mixed', 'Cold']}
+      />
+      <SelectField
+        label="Budget"
+        name="budget"
+        value={form.budget}
+        onChange={handleChange}
+        options={['Drugstore', 'Mid-range', 'Premium']}
+      />
+    </div>
+  );
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -175,6 +243,12 @@ function App() {
         body: JSON.stringify({
           primaryConcern: form.primaryConcern,
           severity: form.severity,
+          skinType: form.skinType,
+          sensitivityLevel: form.sensitivityLevel,
+          mainGoal: form.mainGoal,
+          routineTime: form.routineTime,
+          climate: form.climate,
+          budget: form.budget,
           allergies: toAllergyString(form),
         }),
       });
@@ -257,7 +331,7 @@ function App() {
             <button className="choice-card" onClick={() => setMode('quiz')}>
               <span className="choice-icon">📝</span>
               <strong>Take the Skin Quiz</strong>
-              <span>Answer 3 quick questions</span>
+              <span>Answer 8 personalized questions</span>
             </button>
             <button className="choice-card" onClick={() => setMode('photo')}>
               <span className="choice-icon">📷</span>
@@ -324,6 +398,7 @@ function App() {
               </select>
             </label>
 
+            {profileFields}
             {allergyPicker}
 
             {error && <div className="error-banner">{error}</div>}
@@ -341,6 +416,27 @@ function App() {
 
         {isResultsVisible && (
           <div className="results">
+            {profileSummary && (
+              <div className="analysis-banner profile">
+                <span>Personal profile</span>
+                <strong>{profileSummary}</strong>
+              </div>
+            )}
+
+            {personalizationNotes.length > 0 && (
+              <div className="safety-banner adjusted" role="status">
+                <span className="clash-icon">✨</span>
+                <div>
+                  <strong className="clash-title">Customized notes</strong>
+                  <ul>
+                    {personalizationNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {analysis && (
               <div className="analysis-banner">
                 <span>

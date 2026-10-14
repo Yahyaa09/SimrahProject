@@ -40,7 +40,7 @@ public class RoutineController {
 
     @PostMapping("/build")
     public ResponseEntity<RoutineResponse> buildRoutine(@RequestBody QuizRequest request) {
-        return ResponseEntity.ok(routineBuilderService.buildRoutine(request.getPrimaryConcern(), request.getAllergies()));
+        return ResponseEntity.ok(routineBuilderService.buildRoutine(request));
     }
 
     @GetMapping("/allergens")

@@ -73,6 +73,12 @@ select {
   margin-top: 28px;
 }
 
+.quiz-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .quiz-form label {
   display: grid;
   gap: 8px;
@@ -437,6 +443,10 @@ select {
   color: #3730a3;
 }
 
+.analysis-banner.profile {
+  display: grid;
+}
+
 .analysis-meta {
   font-size: 14px;
   color: #6366f1;
@@ -490,6 +500,10 @@ select {
 }
 
 @media (max-width: 640px) {
+  .quiz-grid {
+    grid-template-columns: 1fr;
+  }
+
   .card {
     padding: 20px;
   }

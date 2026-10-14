@@ -11,5 +11,11 @@ public class QuizRequest {
 
     private String primaryConcern;
     private String severity;
+    private String skinType;
+    private String sensitivityLevel;
+    private String mainGoal;
+    private String routineTime;
+    private String climate;
+    private String budget;
     private String allergies;
 }
