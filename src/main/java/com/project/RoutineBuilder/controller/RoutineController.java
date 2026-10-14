@@ -31,6 +31,7 @@ public class RoutineController {
 
     private final RoutineBuilderService routineBuilderService;
     private final SkinAnalysisService skinAnalysisService;
+
     private final AllergyService allergyService;
 
     @GetMapping("/health")
