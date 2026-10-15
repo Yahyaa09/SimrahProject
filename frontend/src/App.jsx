@@ -113,10 +113,21 @@ function RoutineSteps({ products }) {
   );
 }
 
+function LoadingOverlay({ label }) {
+  return (
+    <div className="loading-overlay" role="status" aria-live="polite" aria-busy="true">
+      <div className="spinner" aria-hidden="true" />
+      <strong>{label}</strong>
+      <span>This can take up to 1 minute the first time while Render wakes up.</span>
+    </div>
+  );
+}
+
 function App() {
   const [mode, setMode] = useState('choose');
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [analysis, setAnalysis] = useState(null);
@@ -233,6 +244,7 @@ function App() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
+    setLoadingLabel('Generating your routine...');
     setError('');
 
     try {
@@ -263,6 +275,7 @@ function App() {
       setResult(null);
     } finally {
       setLoading(false);
+      setLoadingLabel('');
     }
   };
 
@@ -273,6 +286,7 @@ function App() {
       return;
     }
     setLoading(true);
+    setLoadingLabel('Scanning your skin...');
     setError('');
 
     try {
@@ -293,6 +307,7 @@ function App() {
       setResult(null);
     } finally {
       setLoading(false);
+      setLoadingLabel('');
     }
   };
 
@@ -303,6 +318,7 @@ function App() {
     setImageFile(null);
     setError('');
     setLoading(false);
+    setLoadingLabel('');
     setForm(initialForm);
   };
 
@@ -323,6 +339,7 @@ function App() {
             Take the quiz or upload a photo to get an ordered routine with an automatic Match &amp; Clash
             safety check.
           </p>
+          <p className="load-note">Note: the first request can take about 1 minute while the Render backend wakes up.</p>
         </div>
 
         {mode === 'choose' && !isResultsVisible && (
@@ -506,6 +523,8 @@ function App() {
             </button>
           </div>
         )}
+
+        {loading && <LoadingOverlay label={loadingLabel} />}
       </div>
     </div>
   );
